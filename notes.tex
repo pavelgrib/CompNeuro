@@ -1,0 +1,297 @@
+\documentclass[a4paper,10pt]{article}
+%\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amsmath}
+% \usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage[utf8]{inputenc}
+\usepackage{titlesec}
+\usepackage[titletoc]{appendix}
+\titleformat{\chapter}[hang]{\bf\Huge}{\thechapter}{1cm}{}
+
+\pagestyle{plain}
+% -------------------- this stuff for code --------------------
+
+\usepackage{anysize}
+\marginsize{30mm}{30mm}{20mm}{20mm}
+
+\newenvironment{formal}{%
+  \def\FrameCommand{%
+    \hspace{1pt}%
+    {\color{blue}\vrule width 2pt}%
+    {\color{formalshade}\vrule width 4pt}%
+    \colorbox{formalshade}%
+  }%
+  \MakeFramed{\advance\hsize-\width\FrameRestore}%
+  \noindent\hspace{-4.55pt}% disable indenting first paragraph
+  \begin{adjustwidth}{}{7pt}%
+  \vspace{2pt}\vspace{2pt}%
+}
+{%
+  \vspace{2pt}\end{adjustwidth}\endMakeFramed%
+}
+
+\newenvironment{changemargin}[2]{\begin{list}{}{%
+\setlength{\topsep}{0pt}%
+\setlength{\leftmargin}{0pt}%
+\setlength{\rightmargin}{0pt}%
+\setlength{\listparindent}{\parindent}%
+\setlength{\itemindent}{\parindent}%
+\setlength{\parsep}{0pt plus 1pt}%
+\addtolength{\leftmargin}{#1}%
+\addtolength{\rightmargin}{#2}%
+}\item }{\end{list}}
+
+\usepackage{color}
+\usepackage{dsfont}
+\usepackage[bitstream-charter]{mathdesign}
+\usepackage[scaled]{helvet}
+\usepackage{inconsolata}
+
+
+\definecolor{colKeys}{rgb}{0,0,0.9} 
+\definecolor{colIdentifier}{rgb}{0,0,0} 
+\definecolor{colString}{rgb}{0.7,0,0} 
+\definecolor{colComments}{rgb}{0,0.6,0} 
+\usepackage{listings}
+\lstset{
+  language=python,
+  stringstyle=\color{colString},
+  keywordstyle=\color{colKeys},
+  identifierstyle=\color{colIdentifier},
+  commentstyle=\color{colComments},
+  numbers=left,
+  tabsize=4,
+  frame=single,
+  breaklines=true,
+  basicstyle=\small\ttfamily,
+  numberstyle=\tiny\ttfamily,
+  framexleftmargin=0mm,
+  xleftmargin=7mm,
+  xrightmargin=7mm,
+  frameround={tttt},
+  captionpos=b
+}
+
+%% Headers and footers
+\usepackage[section]{placeins}
+\newcommand{\clearemptydoublepage}{\newpage{\pagestyle{plain}\cleardoublepage}}
+
+\usepackage[T1]{fontenc}
+\usepackage{enumerate}
+\usepackage{afterpage,lastpage}
+\usepackage[includeheadfoot,margin=2.5cm]{geometry}
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+
+% -------------------- end of code stuff --------------------
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\makeatletter \def\thickhrulefill{\leavevmode \leaders \hrule height 1pt\hfill
+\kern \z@}
+
+
+\author{Paul Gribelyuk (pg1312, a5)}
+\makeatother
+\title{\Large \#DOC421 - Study Notes for Computational Neurodynamics}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Numerical Simulation}
+Assume that:
+$$
+\frac{dy}{dt} = f(y)
+$$
+\begin{itemize}
+  \item Euler Method
+  $$
+  y(t + \delta t) \approx y(t) + \delta t f(y(t))
+  $$
+  \item Runge-Kutta Method:
+  $$
+  y(t + \delta t) \approx y(t) + \frac{1}{6}\delta t ( k_1 + 2k_2 + 2k_3 + k_4)
+  $$
+  where:
+  \begin{eqnarray*}
+  k_1 &=& f(y(t)) \\
+  k_2 &=& f(y(t) + \frac{1}{2}\delta t k_1) \\
+  k_3 &=& f(y(t) + \frac{1}{2}\delta t k_2) \\
+  k_4 &=& f(y(t) + \delta t k_3)
+  \end{eqnarray*}
+\end{itemize}
+\section{Neuron Firing Models}
+\begin{itemize}
+  \item Hodgkin-Huxley
+  $$
+  \boxed{C\frac{dv}{dt} = -\sum_k I_k + I_{ext}(t)}
+  $$
+  where:
+  \begin{eqnarray*}
+  \sum_k I_k & = & g_{Na} m^3(v) h(v) (v - E_{Na}) + g_{K} n^4(v) (v - E_k) + g_L(v) (v - E_L) \\
+  \frac{dm}{dt} & = & \alpha_m (v)( 1 - m(v) ) - \beta_m (v) m(v) \\
+  \frac{dn}{dt} & = & \alpha_n (v)( 1 - n(v) ) - \beta_n (v) n(v) \\
+  \frac{dh}{dt} & = & \alpha_h (v)( 1 - h(v) ) - \beta_h (v) h(v) \\
+  \alpha_m (v) &=& \frac{2.5 - 0.1v}{e^{2.5-0.1v} - 1} \qquad \beta_m (v) = 4e^{-\frac{v}{18}} \\
+  \alpha_m (v) &=& \frac{0.1 - 0.01v}{e^{1-0.1v} - 1} \qquad \beta_m (v) = 0.125e^{-\frac{v}{80}} \\
+  \alpha_m (v) &=& 0.07e^{-\frac{v}{20}} \qquad \beta_m (v) = \frac{1}{e^{3 - 0.1v} + 1} \\
+  g_{Na} & = & 120 \qquad g_K = 36 \qquad g_L = 0.3 \\
+  E_{Na} & = & 115 \qquad E_K = -12 \qquad E_L = 10.6
+  \end{eqnarray*}
+
+  \item Leaky Integrate and Fire (LIF)
+  \begin{eqnarray*}
+  \tau \frac{dv}{dt} &=& v_r - v + R \cdot I_{ext}(t) \\
+  \text{if } v &\geq& \theta \: \text{then } v \leftarrow v_r
+  \end{eqnarray*}
+  where:
+  $$
+  \tau = 5 \qquad R = 1 \qquad v_r = -65mV \qquad \theta = -50mV
+  $$
+  we insert a spike before the volate reset.  To address a mandatory refactory period,  we can disallow recording a spike until some time $\alpha$ after the time of the last spike $t_{spike}$:
+  $$
+  \text{if  } \{v \geq \theta \text{  and  } t - t_{spike} > \alpha\} \text{  then  } \{v \leftarrow v_r \text{  and  } t_{spike}\leftarrow t\}
+  $$
+  \item Quadratic Integrate and Fire
+  $$
+  \tau \frac{dv}{dt} = a (v_r - v)(v_c - v) + R\cdot I_{ext}(t)
+  $$
+  \item Izhikevich
+  \begin{eqnarray*}
+  \frac{dv}{dt} &=& 0.04v^2 + 5v + 140 - u + I_{ext}(t) \\
+  \frac{du}{dt} &=& a(bv - u)
+  \end{eqnarray*}
+  $$
+  \text{if } v \geq 30 \: \text{then } \{v \leftarrow v_r\text{  and  } u \leftarrow u + d\}
+  $$
+  For excitatory neurons: $a = 0.02 \quad b = 0.2 \quad c = -65 \quad d = 8$ \\
+  For inhibitory neurons: $a = 0.02 \quad b = 0.25 \quad c = -65 \quad d = 2$ \\
+  For bursting neurons: $a = 0.02 \quad b = 0.25 \quad c = -55 \quad d = 0$ \\
+\end{itemize}
+
+\section{Small-World Networks}
+A \emph{network} is a graph $G = \left<V, E\right>$ of nodes in $V$ and edges in $E \subseteq V\times V$.  We have a connectivty matrix $A$ where $A(i,j) = \delta_{(j,i)\in E}$.  For directed networks $A(i,j) = A(j,i)$ also holds.  There are no self-connection, so $A(i,i) = 0$.  The \emph{degree} of a node $i$, $k_i$, is the number of edges it is part of.  The average degree of an undirected graph with $n$ nodes and $m$ edges is:
+$$
+k = \frac{2m}{n}
+$$
+\emph{Random networks} have a fixed probabilty $p$ of any two nodes being connected. The small-world index of a graph $G$ is defined:
+$$
+\sigma_G = \frac{\gamma_G / \gamma_{rand}}{\lambda_G / \lambda_{rand}} = \frac{\gamma_G}{\lambda_G} \Big/ \frac{\gamma_{rand}}{\lambda_{rand}}
+$$
+where $\lambda$ is the average \emph{path length}, and $\gamma$ is the \emph{clustering coefficient}
+To create a small-world network, can use the Watts-Strogatz method:
+\begin{itemize}
+\item[1] Create ring lattice of degree $k$
+\item[2] With probability, $p$, re-wire an un-rewired edge to any other node in the network.
+\end{itemize}
+\emph{Global efficiency} of a network $G$ can be measured:
+$$
+Eff_{glob} (G) = \frac{1}{n(n-1)}\sum_{i\neq j} Eff(i, j)
+$$
+where $Eff(i,j) = \frac{1}{\lambda(i,j)}$. \emph{Local efficiency} is the average of all global efficiencies of subnetworks, $G_i$ corresponding to the direct neighbors of nodes.  This can be measured:
+$$
+Eff_{loc}(G) = \frac{1}{n}\sum_{i\in G} Eff_{glob}(G_i)
+$$
+
+\section{Modular Networks}
+We can generate modular networks with $n$ nodes and $m$ edges by creating $C$ communities where each community has $n/C$ nodes and $m/C$ random edges between nodes in the community.  We the randomly rewire intra-community edges to be intercommunity edges with probability $p$.  We can take a graph $G$ and a partitioning $P$ of that graph into communities and measure its \emph{modularity}:
+$$
+Q(P) = \sum_c \sum_{i,j\in c} \frac{A(i,j)}{2m} - \frac{k_i}{2m}\frac{k_j}{2m} = \frac{1}{2m}\sum_{i,j}\left(A(i,j) - \frac{k_ik_j}{2m}\right)\delta_{c_ic_j}
+$$
+where $c_i$ corresponds to the community of node $i$, and $\delta_{xy}$ is the delta function.  We can spacially embed networks by allowing the probability of a connection between two nodes to vary with their mutual distance:
+$$
+P(A(i,j) = 1) = e^{-h d(i,j)}
+$$
+where $h$ is a pre-defined constant.  As $h$ increases, $\sigma$ and $Q$ increase.  \emph{Hub nodes} are nodes which represent the majority of inter-module connections.  The \emph{participation index} of a node can be defined:
+$$
+P_i = 1 - \sum_c \left(\frac{k_i^c}{k_i}\right)^2
+$$
+for $i$ to be a connector node, $k_i > k$ and $P_i > 0.3$.
+
+\section{Dynamical Complexity}
+For an input set $S$ of $N$ time-series (mean-firing rates of neurons), we can define quantities:
+\begin{itemize}
+  \item Entropy
+  $$
+  H(S) = \frac{1}{2}\ln\left((2\pi e)^N \det(COV(S)\right)
+  $$
+  \item Mutual Information
+  $$
+  MI(X, S-\{X\}) = H(X) + H(S-\{X\}) - H(S)
+  $$
+  \item Integration
+  $$
+  I(S) = \sum_{i = 1}^N H(X_i) - H(S)
+  $$
+  \item Complexity
+  $$
+  C(S) = \sum_{i=1}^N MI(X_i, S-\{X\}) - I(S)
+  $$
+  High segregation means low mutual information.  Overly high integration means $MI$ terms are high but so is the $I(S)$ term.  A balance between segregation and integration means $MI$ term can be high while the $I(S)$ term remains low.
+  \item Granger Causality: For every time-series in $S$, model:
+  $$
+  X_i(t) =\sum_j\sum_{n = 1}{N} Aj X_n(t-j) + B_j X_n(t-j) + C_jX_n(t-j) + \epsilon_N(i, t)
+  $$
+  and without some term $X_{n_0}$:
+  $$
+  X_i(t) =\sum_j\sum_{n \neq n_0} Aj X_n(t-j) + B_j X_n(t-j) + C_jX_n(t-j) + \epsilon_{n_0}(i, t)
+  $$
+  if variance of $\epsilon_N(i, t) \ll \epsilon_{n_0}(i,t)$, then $X_{n_0}$ \emph{Granger-causes} $X_i$.  Causal density can be defined:
+  $$
+  \alpha / n(n-1)
+  $$
+  where $\alpha$ is number of pairs $(i,j)$ where $X_i$ Granger-causes $X_j$.
+  \item Coalition Entropy
+  $$
+  H_C = -\frac{1}{\log_2|L|}\sum_{s\in L} p(s)\log_2(p(s))
+  $$
+\end{itemize}
+
+\section{Synchrony}
+There are 4 frequency bands of neuronal firing: Theta (4-8Hz), Alpha (8-15Hz), Beta (15-30Hz), and Gamma (30-80Hz). 
+\begin{itemize}
+  \item Extracting synchrony from mean firing rates
+  We can extract phase information from a time series $X(t)$:
+  $$
+  \xi(t) = X(t) + iX_H(t) = A(t)e^{i\theta(t)}
+  $$
+  To calculate the Hilbert transform $X_H(t)$:
+  $$
+  X_h(t) = \frac{1}{\pi}P.V.\int_{\mathbb{R}}\frac{X(\tau)}{t - \tau}d\tau
+  $$
+  Then the instantanious phase is:
+  $$
+  \theta(t) = \arctan\left(\frac{X_H(t)}{X(t)}\right)
+  $$
+  The synchrony of a community of oscillators is:
+  $$
+  \phi_c(t) = \left|\left<e^{i\theta_k(t)}\right>_{k\in c}\right|
+  $$
+  is the norm of average of the complex representation of the phase of each oscillator in the community.
+  \item Kuramoto Oscillators
+  $$
+  \frac{d\theta_i}{dt} = \omega_i + \frac{1}{N+1}\sum_{j=1}^N K_{i,j}\sin(\theta_j - \theta_i - \alpha)
+  $$
+  where $\omega_i$ is natural frequency, $K_{i,j}$ is coupling strength, and $\alpha$ is phase lag.  Chimera states arise when $\alpha$ is slightly less than $\frac{\pi}{2}$.
+  \item Chimera and Metastability
+  \begin{eqnarray*}
+  \sigma_{chi}(t) &=& \frac{1}{M-1}\sum_{c\in C}(\phi_c(t) - \left<\phi(t)\right>_C)^2 \\
+  \sigma_{met}(c) &=& \frac{1}{T-1}\sum_{t\leq T}(\phi_c(t) - \left<\phi(t)\right>_T)^2 \\
+  \chi &=& \left<\sigma_{chi}\right>_T \\
+  \lambda &=& \left<\sigma_{met}\right>_C
+  \end{eqnarray*}
+\end{itemize}
+
+\section{Plasticity}
+Updating weights between neurons (STDP):
+$$
+\Delta \omega = \left\{\begin{array}{l} A^{+}e^{-\Delta t/\tau^{+}}\quad \text{if}\quad \Delta\geq 0\\
+                                       -A^{-}e^{ \Delta t/\tau^{-}}\quad \text{if}\quad \Delta< 0
+                       \end{array}\right.
+$$
+
+\end{document}
