@@ -8,6 +8,7 @@ import math, cmath, operator
 from functools import partial
 import numpy as np
 import pandas as pd
+import matplotlib.cm
 import matplotlib.pyplot as plt
 
 def mulTup(tup, times):
@@ -101,15 +102,12 @@ def weightUpdate(dt, Aplus = 1, Aminus = 1, tauPlus = 1, tauMinus = 1):
     elif dt < 0:
         return -Aminus * math.exp( dt / tauMinus )
 
-def kuramotoSim(K, alpha, omega, N, maxT, dt):
-    nSteps = int(maxT / dt)
-    theta = np.random.rand(nSteps, N) * 2 - 1
-    for t in range(1, nSteps):
-        for i in range(N):
-            sines = np.zeros((N,1))
-            for j in range(N):
-                sines[j] = K * math.sin(theta[t-1, j] - theta[t-1, i] - alpha)
-            theta[t, i] = theta[t-1, i] + dt *(omega + sines.sum() / (N + 1))
+def kuramotoSim(K, alpha, omega, num, N, dt):
+    theta = np.random.rand(N, num)*2 - 1
+    for t in range(1, N):
+        for i in range(num):
+            sineSum = ( K[i, :] * np.sin(theta[t-1, :] - theta[t-1, i] - alpha) ).sum()
+            theta[t, i] = theta[t-1, i] + dt * (omega[i] + sineSum / (num + 1))
     return theta
 
 def variance(series):
@@ -171,7 +169,7 @@ def izhikevichSim(v0, u0, I, a, b, c, d, N, dt, update='Euler'):
             inputs = addTup( (u[i-1], v[i-1]), mulTup( (k2u, k2v), dt/2.0 ) )
             k3u, k3v = izUpdate(inputs[0], inputs[1], I)
             inputs = addTup( (u[i-1], v[i-1]), mulTup( (k3u, k3v), dt ) )
-            k4u, k4v = izUpdate(inputs[0], inputs[1], I)
+            _, k4v = izUpdate(inputs[0], inputs[1], I)
             v[i] = v[i-1] + dt*(k1v + 2*k2v + 2*k3v + k4v) / 6.0
         else:
             print 'update method ' + str(update) + ' not understood'
@@ -294,11 +292,14 @@ def numSpikes(v, threshold=0):
     return len( above[above[0:(len(above)-2)] != above[1:(len(above)-1)]] )/2
      
 def display(v):
-    plt.plot(range(len(v)), v, color='b')
+    colors = matplotlib.cm.rainbow(np.linspace(0, 1, v.shape[1]))
+    x = range(v.shape[0])
+    for (i, c) in zip(range(v.shape[1]), colors):
+        plt.plot(x, v[:,i], color=c)
     plt.show()
     
 def displayIz((u,v)):
-    f, ax = plt.subplots(2, sharex=True)
+    _, ax = plt.subplots(2, sharex=True)
     ax[0].plot(range(len(v)), v)
     ax[0].set_title('izhikevich neuron firing')
     ax[1].plot(range(len(u)), u)
@@ -327,11 +328,16 @@ def tests():
     print numSpikes(lif)
     print numSpikes(hh, 50)
 #     display( qif )
-    displayIz(iz_inh)
-#     alpha = 0
-#     K = 0.02
-#     omega = 0.1
-#     sim = kuramotoSim(K, alpha, omega, 10, 1, 0.001)
+#     displayIz(iz_inh)
+    
+    alpha = 1.55
+    num = 32
+    K = 0.02 * np.ones((num, num))
+    omega = 0.1 * np.ones((num, 1))
+    kur = kuramotoSim(K, alpha, omega, num, 1000, 1)
+    display(np.sin(kur))
+    
+#     display()
 #     for i in range(sim.shape[0]):
 #         print synchrony(sim[i,])
     
@@ -351,5 +357,6 @@ def tests():
 #     dw = map( weightUpdate, dt  )
 #     plt.plot( dt, dw )
 #     plt.show()
-        
-tests()
+       
+if __name__=='__main__': 
+    tests()
