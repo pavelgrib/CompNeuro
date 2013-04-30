@@ -184,14 +184,14 @@ def izhikevichSim(v0, u0, I, a, b, c, d, N, dt, update='Euler'):
     return (u, v)
 
 def eulerUpdate(lastVal, updateFunc, dt):
-    return lastVal + updateFunc(lastVal) * dt
+    return updateFunc(lastVal) * dt
 
 def rkUpdate(lastVal, updateFunc, dt):
     k1 = updateFunc(lastVal)
     k2 = updateFunc(lastVal + k1 * dt / 2)
     k3 = updateFunc(lastVal + k2 * dt / 2)
     k4 = updateFunc(lastVal + k3 * dt    )
-    return lastVal + dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0
+    return dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0
 
 def hhSim(v0, m0, n0, h0, N, dt, I, update='Euler', C=1):
     v = np.zeros((N,1), dtype=float)
@@ -203,8 +203,8 @@ def hhSim(v0, m0, n0, h0, N, dt, I, update='Euler', C=1):
     alpha_m = lambda volts: (2.5 - 0.1*volts) /(math.exp(2.5-0.1*volts) - 1)
     alpha_n = lambda volts: (0.1 - 0.01*volts)/(math.exp(1.0-0.1*volts) - 1)    
     alpha_h = lambda volts: 0.07  * math.exp(-volts/20.0)
-    beta_m  = lambda volts: 4.00  * math.exp(-volts/18)
-    beta_n  = lambda volts: 0.125 * math.exp(-volts/80)
+    beta_m  = lambda volts: 4.00  * math.exp(-volts/18.0)
+    beta_n  = lambda volts: 0.125 * math.exp(-volts/80.0)
     beta_h  = lambda volts: 1.0   / (math.exp(3.0 - 0.1*volts)+1)
     g = np.array([120, 36, 0.3])
     E = np.array([115, -12, 10.6])
@@ -216,29 +216,34 @@ def hhSim(v0, m0, n0, h0, N, dt, I, update='Euler', C=1):
     def updateH(last_h, volts):
         return alpha_h(volts)*(1-last_h) - beta_h(volts)*last_h
     def hhUpdate(volts, last_m, last_n, last_h, curr): 
-        return curr + sum( g *(volts - E) * 
+        return curr - sum( g *(volts - E) * 
                            np.array([last_h*math.pow(last_m,3), math.pow(last_n,4), 1]) )
-        
+    
+#     forPlotting = partial( updateM, 0.1 )
+#     plt.plot(np.linspace(-10, 40, 1000), map( forPlotting, np.linspace(-10, 40, 1000) ) )
+#     plt.show()
+
     for i in range(1, N):
+#         print v[i-1]
         mUpdater = partial(updateM, volts=v[i-1])
         nUpdater = partial(updateN, volts=v[i-1])
         hUpdater = partial(updateH, volts=v[i-1])
         vUpdater = partial(hhUpdate, last_m=m, last_n=n, last_h=h, curr=I)
         if update.lower() == 'euler':
-            m    = eulerUpdate(m, mUpdater, dt)
-            n    = eulerUpdate(n, nUpdater, dt)
-            h    = eulerUpdate(h, hUpdater, dt)
-            v[i] = eulerUpdate(v[i-1], vUpdater, dt) / C
+            m    += eulerUpdate(m, mUpdater, dt)
+            n    += eulerUpdate(n, nUpdater, dt)
+            h    += eulerUpdate(h, hUpdater, dt)
+            v[i] = v[i-1] + eulerUpdate(v[i-1], vUpdater, dt) / C
         elif update.lower()=='rk' or update.lower()=='runge-kutta' or update.lower()=='rungekutta':
-            m    = rkUpdate(m, mUpdater, dt)
-            n    = rkUpdate(n, nUpdater, dt)
-            h    = rkUpdate(h, hUpdater, dt)
-            v[i] = rkUpdate(v[i-1], vUpdater, dt) / C
+            m    += rkUpdate(m, mUpdater, dt)
+            n    += rkUpdate(n, nUpdater, dt)
+            h    += rkUpdate(h, hUpdater, dt)
+            v[i] = v[i-1] + rkUpdate(v[i-1], vUpdater, dt) / C
         else: 
             print 'update method ' + str(update) + ' not understood'
     return v
 
-def LIFSim(v0, N, dt, I, update='Euler', R=1, tau=5, vr=-65, theta=-50, alpha=0):
+def LIFSim(v0, N, dt, I, update='Euler', R=1, tau=5, vr=-65, theta=-50, alpha=0.5, spikeV=30):
     v = np.zeros((N, 1), dtype=float)
     v[0] = v0
     t_spike = float('-inf')
@@ -248,19 +253,21 @@ def LIFSim(v0, N, dt, I, update='Euler', R=1, tau=5, vr=-65, theta=-50, alpha=0)
 
     for i in range(1, N):
         if update.lower()=='euler':
-            temp = eulerUpdate( v[i-1], lifUpdate, dt) / tau
+            temp = v[i-1] + eulerUpdate( v[i-1], lifUpdate, dt ) / tau
         elif update.lower()=='rk' or update.lower()=='runge-kutta' or update.lower()=='rungekutta':
-            temp = rkUpdate(v[i-1], lifUpdate, dt) / tau
+            temp = v[i-1] + rkUpdate(v[i-1], lifUpdate, dt) / tau
         else:
             print 'update method ' + str(update) + ' not understood'
+        
         if temp > theta and (i*dt - t_spike) > alpha:
-            v[i] = vr
+            v[i]   = vr
+            v[i-1] = spikeV
             t_spike = i*dt
         else:
             v[i] = temp
     return v
 
-def QIFSim(v0, N, dt, I, update='Euler', R=1, a=0.04, tau=5, vr=-65, vc=-30, theta=-50, alpha=0):
+def QIFSim(v0, N, dt, I, update='Euler', R=1, a=0.04, tau=5, vr=-65, vc=-55, theta=-30, alpha=0, spikeV=30):
     v = np.zeros((N, 1), dtype=float)
     v[0] = v0
     t_spike = float('-inf')
@@ -269,19 +276,20 @@ def QIFSim(v0, N, dt, I, update='Euler', R=1, a=0.04, tau=5, vr=-65, vc=-30, the
     
     for i in range(1, N):
         if update.lower()=='euler':
-            temp = eulerUpdate( v[i-1], qifUpdate, dt) / tau
+            temp = v[i-1] + eulerUpdate( v[i-1], qifUpdate, dt) / tau
         elif update.lower()=='rk' or update.lower()=='runge-kutta' or update.lower()=='rungekutta':
-            temp = rkUpdate(v[i-1], qifUpdate, dt) / tau
+            temp = v[i-1] + rkUpdate(v[i-1], qifUpdate, dt) / tau
         else:
             print 'update method ' + str(update) + ' not understood'
         if temp > theta and (i*dt - t_spike) > alpha:
-            v[i] = vr
+            v[i  ] = vr
+            v[i-1] = spikeV
             t_spike = i*dt
         else:
             v[i] = temp
     return v
      
-def numSpikes(v, threshold):
+def numSpikes(v, threshold=0):
     return len(v[v > threshold])
      
 def display(v):
@@ -302,9 +310,14 @@ def tests():
     old_ts = np.random.rand(100, 1) * math.pi * 2 - math.pi
 #     print synchrony(old_ts)
     
-    display( hhSim(0, 0, 0, 0, 1000, 0.1, 5) )
-    
-    
+#     display( hhSim(-10, 0, 0, 0, 1000, 0.1, 10) )
+    lif = LIFSim(-70, 1000, 0.1, 20, update='rk')
+    qif = QIFSim(-70, 1000, 0.1, 20, update='rk')
+    hh  =  hhSim(0, 0, 0, 0, 1000, 0.1, 20, update='rk') 
+    print numSpikes(qif)
+    print numSpikes(lif)
+    print numSpikes(hh, 80)
+    display( hh )
 #     alpha = 0
 #     K = 0.02
 #     omega = 0.1
