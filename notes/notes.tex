@@ -132,13 +132,13 @@ $$
   $$
   where:
   \begin{eqnarray*}
-  \sum_k I_k & = & g_{Na} m^3(v) h(v) (v - E_{Na}) + g_{K} n^4(v) (v - E_k) + g_L(v) (v - E_L) \\
+  \sum_k I_k & = & g_{Na} m^3(v) h(v) (v - E_{Na}) + g_{K} n^4(v) (v - E_k) + g_L(v - E_L) \\
   \frac{dm}{dt} & = & \alpha_m (v)( 1 - m(v) ) - \beta_m (v) m(v) \\
   \frac{dn}{dt} & = & \alpha_n (v)( 1 - n(v) ) - \beta_n (v) n(v) \\
   \frac{dh}{dt} & = & \alpha_h (v)( 1 - h(v) ) - \beta_h (v) h(v) \\
   \alpha_m (v) &=& \frac{2.5 - 0.1v}{e^{2.5-0.1v} - 1} \qquad \beta_m (v) = 4e^{-\frac{v}{18}} \\
-  \alpha_m (v) &=& \frac{0.1 - 0.01v}{e^{1-0.1v} - 1} \qquad \beta_m (v) = 0.125e^{-\frac{v}{80}} \\
-  \alpha_m (v) &=& 0.07e^{-\frac{v}{20}} \qquad \beta_m (v) = \frac{1}{e^{3 - 0.1v} + 1} \\
+  \alpha_n (v) &=& \frac{0.1 - 0.01v}{e^{1-0.1v} - 1} \qquad \beta_n (v) = 0.125e^{-\frac{v}{80}} \\
+  \alpha_h (v) &=& 0.07e^{-\frac{v}{20}} \qquad \beta_h (v) = \frac{1}{e^{3 - 0.1v} + 1} \\
   g_{Na} & = & 120 \qquad g_K = 36 \qquad g_L = 0.3 \\
   E_{Na} & = & 115 \qquad E_K = -12 \qquad E_L = 10.6
   \end{eqnarray*}
