@@ -290,10 +290,18 @@ def QIFSim(v0, N, dt, I, update='Euler', R=1, a=0.04, tau=5, vr=-65, vc=-55, the
     return v
      
 def numSpikes(v, threshold=0):
-    return len(v[v > threshold])
+    above = v > threshold
+    return len( above[above[0:(len(above)-2)] != above[1:(len(above)-1)]] )/2
      
 def display(v):
     plt.plot(range(len(v)), v, color='b')
+    plt.show()
+    
+def displayIz((u,v)):
+    f, ax = plt.subplots(2, sharex=True)
+    ax[0].plot(range(len(v)), v)
+    ax[0].set_title('izhikevich neuron firing')
+    ax[1].plot(range(len(u)), u)
     plt.show()
     
 def tests():
@@ -312,12 +320,14 @@ def tests():
     
 #     display( hhSim(-10, 0, 0, 0, 1000, 0.1, 10) )
     lif = LIFSim(-70, 1000, 0.1, 20, update='rk')
-    qif = QIFSim(-70, 1000, 0.1, 20, update='rk')
-    hh  =  hhSim(0, 0, 0, 0, 1000, 0.1, 20, update='rk') 
+    qif = QIFSim(-50, 1000, 0.1, 3, update='rk', spikeV = 20)
+    hh  =  hhSim(0, 0, 0, 0, 1000, 0.1, 10, update='rk', C = 3)
+    iz_inh = izhikevichSim(v0=-65, u0=0, I=5, a=0.02, b=0.25, c=-65, d=2, N=1000, dt=0.1)
     print numSpikes(qif)
     print numSpikes(lif)
-    print numSpikes(hh, 80)
-    display( hh )
+    print numSpikes(hh, 50)
+#     display( qif )
+    displayIz(iz_inh)
 #     alpha = 0
 #     K = 0.02
 #     omega = 0.1
@@ -325,7 +335,7 @@ def tests():
 #     for i in range(sim.shape[0]):
 #         print synchrony(sim[i,])
     
-#     izSim = izhikevichSim(-65, 0, 5, 0.07, 0.25, -65, 8, 1000, 0.1)
+    
 #     izSim2 = izhikevichSim(-65, 0, 5, 0.1, 0.25, -65, 8, 1000, 0.1)
 #     print izSim[1]
 #     plt.plot(range(1000), izSim[0],color='red')
